@@ -3,22 +3,45 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using System.IO;
 
 public class MainManager : MonoBehaviour
 {
+    public static MainManager Instance;
+
     public Brick BrickPrefab;
     public int LineCount = 6;
     public Rigidbody Ball;
 
     public Text ScoreText;
     public GameObject GameOverText;
-    
+    public string PlayerName;
+    public int BestScore;
+    public int CurrentScore;
+
     private bool m_Started = false;
     private int m_Points;
     
     private bool m_GameOver = false;
 
-    
+    private void Awake()
+    {
+        if (Instance != null)
+        {
+            Destroy(gameObject);
+            return;
+        }
+        Instance = this;
+        DontDestroyOnLoad(gameObject);
+        LoadName();
+    }
+    [System.Serializable]
+    class SaveData
+    {
+        public string PlayerName;
+        public int BestScore;
+    }
+
     // Start is called before the first frame update
     void Start()
     {
@@ -70,7 +93,37 @@ public class MainManager : MonoBehaviour
 
     public void GameOver()
     {
+        CurrentScore = m_Points;
         m_GameOver = true;
         GameOverText.SetActive(true);
     }
+
+    public void SaveName()
+    {
+        SaveData data = new SaveData();
+        data.PlayerName = PlayerName;
+        if (data.BestScore > BestScore)
+        {
+            data.BestScore = BestScore;
+        }
+        
+
+        string json = JsonUtility.ToJson(data);
+
+        File.WriteAllText(Application.persistentDataPath + "/playername.json", json);
+    }
+
+    public void LoadName()
+    {
+        string path = Application.persistentDataPath + "/playername.json";
+        if (File.Exists(path))
+        {
+            string json = File.ReadAllText(path);
+            SaveData data = JsonUtility.FromJson<SaveData>(json);
+
+            PlayerName = data.PlayerName;
+            BestScore = data.BestScore;
+        }
+    }
+
 }
