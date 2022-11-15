@@ -7,44 +7,34 @@ using System.IO;
 
 public class MainManager : MonoBehaviour
 {
-    public static MainManager Instance;
-
     public Brick BrickPrefab;
     public int LineCount = 6;
     public Rigidbody Ball;
 
     public Text ScoreText;
+    public Text BestText;
     public GameObject GameOverText;
-    public string PlayerName;
-    public int BestScore;
-    public int CurrentScore;
 
+
+    public int BestScore;
+    public string PlayerName;
+    
     private bool m_Started = false;
     private int m_Points;
     
     private bool m_GameOver = false;
 
-    private void Awake()
-    {
-        if (Instance != null)
-        {
-            Destroy(gameObject);
-            return;
-        }
-        Instance = this;
-        DontDestroyOnLoad(gameObject);
-        LoadName();
-    }
-    [System.Serializable]
-    class SaveData
-    {
-        public string PlayerName;
-        public int BestScore;
-    }
 
     // Start is called before the first frame update
+
+   
+   
     void Start()
     {
+        LoadScore();
+
+        BestText.text = "Best Score : " + PlayerName + " : " + BestScore;
+
         const float step = 0.6f;
         int perLine = Mathf.FloorToInt(4.0f / step);
         
@@ -93,37 +83,47 @@ public class MainManager : MonoBehaviour
 
     public void GameOver()
     {
-        CurrentScore = m_Points;
+        if (m_Points > BestScore)
+        {
+            BestScore = m_Points;
+            PlayerName = NameInput.Instance.PlayerName;
+            SaveScore();
+            
+        }
         m_GameOver = true;
         GameOverText.SetActive(true);
+        Debug.Log(BestScore + " " + PlayerName);
     }
 
-    public void SaveName()
+
+    [System.Serializable]
+    class SaveData
+    {
+        public int BestScore;
+        public string PlayerName;
+    }
+
+    public void SaveScore()
     {
         SaveData data = new SaveData();
+        data.BestScore = BestScore;
         data.PlayerName = PlayerName;
-        if (data.BestScore > BestScore)
-        {
-            data.BestScore = BestScore;
-        }
-        
 
         string json = JsonUtility.ToJson(data);
 
-        File.WriteAllText(Application.persistentDataPath + "/playername.json", json);
+        File.WriteAllText(Application.persistentDataPath + "/savescore.json", json);
     }
 
-    public void LoadName()
+    public void LoadScore()
     {
-        string path = Application.persistentDataPath + "/playername.json";
+        string path = Application.persistentDataPath + "/savescore.json";
         if (File.Exists(path))
         {
             string json = File.ReadAllText(path);
             SaveData data = JsonUtility.FromJson<SaveData>(json);
 
-            PlayerName = data.PlayerName;
             BestScore = data.BestScore;
+            PlayerName = data.PlayerName;
         }
     }
-
 }
